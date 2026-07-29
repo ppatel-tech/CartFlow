@@ -1,6 +1,7 @@
 package com.cartflow.security;
 
 import com.cartflow.user.entity.User;
+import com.cartflow.user.entity.UserStatus;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -15,13 +16,19 @@ public class UserPrincipal implements UserDetails {
     private final Long id;
     private final String email;
     private final String password;
+    private final UserStatus status;
     private final List<GrantedAuthority> authorities;
 
     public UserPrincipal(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
         this.password = user.getPassword();
+        this.status = user.getStatus();
         this.authorities = List.of(new SimpleGrantedAuthority(user.getRole().name()));
+    }
+
+    public String getRole() {
+        return authorities.get(0).getAuthority();
     }
 
     @Override
@@ -29,15 +36,14 @@ public class UserPrincipal implements UserDetails {
         return email;
     }
 
-
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return status != UserStatus.DELETED;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return status != UserStatus.BLOCKED;
     }
 
     @Override
@@ -47,9 +53,6 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
-    }
-    public String getRole() {
-        return authorities.get(0).getAuthority();
+        return status == UserStatus.ACTIVE;
     }
 }

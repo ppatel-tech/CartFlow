@@ -49,6 +49,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (jwtUtil.isTokenValid(token, email)) {
 
+                    UserPrincipal principal = (UserPrincipal) userDetails;
+
+                    if (!principal.isEnabled() || !principal.isAccountNonLocked()
+                            || !principal.isAccountNonExpired()) {
+                        log.warn("Rejected request for restricted account: {}", email);
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails, null, userDetails.getAuthorities());

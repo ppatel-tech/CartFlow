@@ -4,6 +4,8 @@ import com.cartflow.common.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -44,6 +46,14 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> body = ApiResponse.error(ex.getMessage(), "INVALID_TOKEN", null);
         return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
     }
+
+    @ExceptionHandler({LockedException.class, DisabledException.class})
+    public ResponseEntity<ApiResponse<Object>> handleAccountStatusException(RuntimeException ex) {
+        ApiResponse<Object> body = ApiResponse.error(ex.getMessage(), "ACCOUNT_RESTRICTED", null);
+        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
+    }
+
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
