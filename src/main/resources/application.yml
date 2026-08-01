@@ -29,6 +29,11 @@ spring:
       port: 6379
       timeout: 60000
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
 server:
   port: 8080
 
@@ -39,5 +44,6 @@ app:
     refresh-token-expiration-ms: 604800000
   password-reset:
     token-expiration-ms: 900000
-
+  upload:
+    dir: uploads/products
 
