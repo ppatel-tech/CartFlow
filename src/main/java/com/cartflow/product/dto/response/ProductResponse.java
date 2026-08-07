@@ -27,4 +27,5 @@ public class ProductResponse {
     private String brandName;
     private Instant createdAt;
     private List<String> imageUrls;
+    private boolean inStock;
 }

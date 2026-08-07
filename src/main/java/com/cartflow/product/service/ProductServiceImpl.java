@@ -7,6 +7,8 @@ import com.cartflow.category.repository.CategoryRepository;
 import com.cartflow.exception.BusinessException;
 import com.cartflow.exception.DuplicateResourceException;
 import com.cartflow.exception.ResourceNotFoundException;
+import com.cartflow.inventory.entity.Inventory;
+import com.cartflow.inventory.repository.InventoryRepository;
 import com.cartflow.product.dto.request.ProductRequest;
 import com.cartflow.product.dto.response.ProductResponse;
 import com.cartflow.product.entity.Product;
@@ -37,6 +39,7 @@ public class ProductServiceImpl implements ProductService {
     private final BrandRepository brandRepository;
     private final ProductImageRepository productImageRepository;
     private final FileStorageService fileStorageService;
+    private final InventoryRepository inventoryRepository;
 
     @Override
     @Transactional
@@ -71,8 +74,17 @@ public class ProductServiceImpl implements ProductService {
 
         Product savedProduct = productRepository.save(product);
 
-        log.info("Product created: {} (SKU: {})", savedProduct.getName(), savedProduct.getSku());
+        Inventory inventory = Inventory.builder()
+                .product(savedProduct)
+                .availableQuantity(0)
+                .reservedQuantity(0)
+                .lowStockThreshold(10)
+                .build();
 
+        inventoryRepository.save(inventory);
+
+        log.info("Product created: {} (SKU: {})", savedProduct.getName(), savedProduct.getSku());
+        log.info("Inventory initialized for product: {}", savedProduct.getSku());
         return mapToResponse(savedProduct);
     }
 
@@ -210,6 +222,10 @@ public class ProductServiceImpl implements ProductService {
                 .map(ProductImage::getImageUrl)
                 .toList();
 
+        boolean inStock = inventoryRepository.findByProductId(product.getId())
+                .map(inventory -> inventory.getAvailableQuantity() > 0)
+                .orElse(false);
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -225,6 +241,7 @@ public class ProductServiceImpl implements ProductService {
                 .brandId(product.getBrand().getId())
                 .brandName(product.getBrand().getName())
                 .imageUrls(imageUrls)
+                .inStock(inStock)
                 .createdAt(product.getCreatedAt())
                 .build();
     }
