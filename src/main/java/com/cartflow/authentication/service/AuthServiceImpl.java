@@ -17,6 +17,8 @@ import com.cartflow.user.entity.User;
 import com.cartflow.user.entity.UserRole;
 import com.cartflow.user.entity.UserStatus;
 import com.cartflow.user.repository.UserRepository;
+import com.cartflow.wishlist.entity.Wishlist;
+import com.cartflow.wishlist.repository.WishlistRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +45,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final JwtUtil jwtUtil;
     private final CartRepository cartRepository;
+    private final WishlistRepository wishlistRepository;
 
 
     @Value("${app.jwt.refresh-token-expiration-ms}")
@@ -72,6 +75,8 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
+        log.info("New user registered with email: {}", savedUser.getEmail());
+
         Cart cart = Cart.builder()
                 .user(savedUser)
                 .build();
@@ -80,7 +85,16 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("Cart initialized for user: {}", savedUser.getEmail());
 
-        log.info("New user registered with email: {}", savedUser.getEmail());
+
+        Wishlist wishlist = Wishlist.builder()
+                .user(savedUser)
+                .build();
+
+        wishlistRepository.save(wishlist);
+
+        log.info("Wishlist initialized for user: {}", savedUser.getEmail());
+
+
 
         return RegisterResponse.builder()
                 .id(savedUser.getId())
