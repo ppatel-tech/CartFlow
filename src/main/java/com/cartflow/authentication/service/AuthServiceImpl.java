@@ -7,6 +7,8 @@ import com.cartflow.authentication.entity.PasswordResetToken;
 import com.cartflow.authentication.entity.RefreshToken;
 import com.cartflow.authentication.repository.PasswordResetTokenRepository;
 import com.cartflow.authentication.repository.RefreshTokenRepository;
+import com.cartflow.cart.entity.Cart;
+import com.cartflow.cart.repository.CartRepository;
 import com.cartflow.exception.DuplicateResourceException;
 import com.cartflow.exception.InvalidTokenException;
 import com.cartflow.security.JwtUtil;
@@ -40,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final JwtUtil jwtUtil;
+    private final CartRepository cartRepository;
 
 
     @Value("${app.jwt.refresh-token-expiration-ms}")
@@ -68,6 +71,14 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        Cart cart = Cart.builder()
+                .user(savedUser)
+                .build();
+
+        cartRepository.save(cart);
+
+        log.info("Cart initialized for user: {}", savedUser.getEmail());
 
         log.info("New user registered with email: {}", savedUser.getEmail());
 
