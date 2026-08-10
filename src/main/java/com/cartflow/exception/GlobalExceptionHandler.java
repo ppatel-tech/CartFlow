@@ -61,6 +61,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(InvalidCouponException.class)
+    public ResponseEntity<ApiResponse<Object>> handleInvalidCoupon(InvalidCouponException ex) {
+        ApiResponse<Object> body = ApiResponse.error(ex.getMessage(), "INVALID_COUPON", null);
+        return new ResponseEntity<>(body, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
         List<ApiResponse.FieldError> fieldErrors = ex.getBindingResult()
