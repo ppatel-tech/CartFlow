@@ -18,4 +18,5 @@ public interface CouponService {
     BigDecimal validateAndCalculateDiscount(String code, BigDecimal cartTotal, User user);
     CouponDiscountResponse validateCoupon(String email, String code);
     CouponDiscountResponse applyCoupon(String email, ApplyCouponRequest request);
+    void recordCouponUsage(String code, User user);
 }

@@ -46,4 +46,7 @@ app:
     token-expiration-ms: 900000
   upload:
     dir: uploads/products
+  order:
+    tax-rate: 0.05
+    shipping-charge: 50.00
 

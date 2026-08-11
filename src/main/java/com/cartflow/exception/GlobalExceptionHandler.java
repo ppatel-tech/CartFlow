@@ -64,7 +64,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCouponException.class)
     public ResponseEntity<ApiResponse<Object>> handleInvalidCoupon(InvalidCouponException ex) {
         ApiResponse<Object> body = ApiResponse.error(ex.getMessage(), "INVALID_COUPON", null);
-        return new ResponseEntity<>(body, HttpStatus.UNPROCESSABLE_ENTITY);
+        return new ResponseEntity<>(body, HttpStatus.UNPROCESSABLE_CONTENT);
+    }
+
+    @ExceptionHandler(OutOfStockException.class)
+    public ResponseEntity<ApiResponse<Object>> handleOutOfStock(OutOfStockException ex) {
+        ApiResponse<Object> body = ApiResponse.error(ex.getMessage(), "OUT_OF_STOCK", null);
+        return new ResponseEntity<>(body, HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

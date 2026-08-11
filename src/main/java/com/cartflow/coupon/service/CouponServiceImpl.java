@@ -196,7 +196,18 @@ public class CouponServiceImpl implements CouponService {
 
         BigDecimal discount = validateAndCalculateDiscount(request.getCode(), cartTotal, user);
 
-        Coupon coupon = couponRepository.findByCodeAndIsActiveTrue(request.getCode())
+        recordCouponUsage(request.getCode(), user);
+
+        log.info("Coupon {} applied for user: {}", request.getCode(), email);
+
+        return buildDiscountResponse(request.getCode(), cartTotal, discount);
+    }
+
+
+    @Override
+    @Transactional
+    public void recordCouponUsage(String code, User user) {
+        Coupon coupon = couponRepository.findByCodeAndIsActiveTrue(code)
                 .orElseThrow(() -> new InvalidCouponException("Invalid or inactive coupon code"));
 
         coupon.setUsedCount(coupon.getUsedCount() + 1);
@@ -207,12 +218,8 @@ public class CouponServiceImpl implements CouponService {
                 .user(user)
                 .build();
         couponUsageRepository.save(usage);
-
-        log.info("Coupon {} applied for user: {} (usage: {}/{})",
-                coupon.getCode(), email, coupon.getUsedCount(), coupon.getUsageLimit());
-
-        return buildDiscountResponse(request.getCode(), cartTotal, discount);
     }
+
 
     private CouponDiscountResponse buildDiscountResponse(
             String code, BigDecimal cartTotal, BigDecimal discount) {
