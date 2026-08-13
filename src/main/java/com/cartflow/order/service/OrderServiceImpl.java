@@ -12,6 +12,7 @@ import com.cartflow.exception.ResourceNotFoundException;
 import com.cartflow.inventory.entity.Inventory;
 import com.cartflow.inventory.repository.InventoryRepository;
 import com.cartflow.order.dto.request.CheckoutRequest;
+import com.cartflow.order.dto.response.OrderConfigResponse;
 import com.cartflow.order.dto.response.OrderItemResponse;
 import com.cartflow.order.dto.response.OrderResponse;
 import com.cartflow.order.dto.response.OrderTrackingResponse;
@@ -269,7 +270,13 @@ public class OrderServiceImpl implements OrderService {
         return invoiceService.generateInvoicePdf(order, items);
     }
 
-
+    @Override
+    public OrderConfigResponse getOrderConfig() {
+        return OrderConfigResponse.builder()
+                .taxRate(taxRate)
+                .shippingCharge(shippingCharge)
+                .build();
+    }
 
     private String describeStatus(OrderStatus status) {
         return switch (status) {

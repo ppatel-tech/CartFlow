@@ -2,6 +2,7 @@ package com.cartflow.order.controller;
 
 import com.cartflow.common.ApiResponse;
 import com.cartflow.order.dto.request.CheckoutRequest;
+import com.cartflow.order.dto.response.OrderConfigResponse;
 import com.cartflow.order.dto.response.OrderResponse;
 import com.cartflow.order.dto.response.OrderTrackingResponse;
 import com.cartflow.order.service.OrderService;
@@ -85,5 +86,11 @@ public class OrderController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoice.pdf")
                 .body(pdfBytes);
+    }
+
+    @GetMapping("/config")
+    public ApiResponse<OrderConfigResponse> getOrderConfig() {
+        OrderConfigResponse response = orderService.getOrderConfig();
+        return ApiResponse.success("Order configuration retrieved", response);
     }
 }

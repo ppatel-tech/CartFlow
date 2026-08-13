@@ -1,6 +1,7 @@
 package com.cartflow.order.service;
 
 import com.cartflow.order.dto.request.CheckoutRequest;
+import com.cartflow.order.dto.response.OrderConfigResponse;
 import com.cartflow.order.dto.response.OrderResponse;
 import com.cartflow.order.dto.response.OrderTrackingResponse;
 import org.springframework.data.domain.Page;
@@ -13,4 +14,5 @@ public interface OrderService {
     OrderResponse cancelOrder(String email, Long orderId);
     OrderTrackingResponse trackOrder(String email, Long orderId);
     byte[] getInvoicePdf(String email, Long orderId);
+    OrderConfigResponse getOrderConfig();
 }
