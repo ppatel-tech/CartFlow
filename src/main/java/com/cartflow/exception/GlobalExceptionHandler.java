@@ -73,6 +73,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
+    @ExceptionHandler(PaymentException.class)
+    public ResponseEntity<ApiResponse<Object>> handlePaymentException(PaymentException ex) {
+        ApiResponse<Object> body = ApiResponse.error(ex.getMessage(), "PAYMENT_ERROR", null);
+        return new ResponseEntity<>(body, HttpStatus.UNPROCESSABLE_CONTENT);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
         List<ApiResponse.FieldError> fieldErrors = ex.getBindingResult()

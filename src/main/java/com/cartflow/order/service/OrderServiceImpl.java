@@ -22,6 +22,7 @@ import com.cartflow.order.entity.OrderStatus;
 import com.cartflow.order.entity.PaymentStatus;
 import com.cartflow.order.repository.OrderItemRepository;
 import com.cartflow.order.repository.OrderRepository;
+import com.cartflow.payment.repository.PaymentRepository;
 import com.cartflow.product.entity.Product;
 import com.cartflow.product.repository.ProductRepository;
 import com.cartflow.user.entity.User;
@@ -54,7 +55,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemRepository orderItemRepository;
     private final CouponService couponService;
     private final InvoiceService invoiceService;
-
+    private final PaymentRepository paymentRepository;
+    
     @Value("${app.order.tax-rate}")
     private BigDecimal taxRate;
 
@@ -226,6 +228,15 @@ public class OrderServiceImpl implements OrderService {
             inventory.setReservedQuantity(inventory.getReservedQuantity() - item.getQuantity());
             inventory.setAvailableQuantity(inventory.getAvailableQuantity() + item.getQuantity());
             inventoryRepository.save(inventory);
+        }
+
+        if (order.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            paymentRepository.findByOrder(order).ifPresent(payment -> {
+                payment.setPaymentStatus(PaymentStatus.REFUNDED);
+                paymentRepository.save(payment);
+            });
+            order.setPaymentStatus(PaymentStatus.REFUNDED);
+            log.info("Order {} was paid - marked as refunded on cancellation", order.getOrderNumber());
         }
 
         order.setOrderStatus(OrderStatus.CANCELLED);
