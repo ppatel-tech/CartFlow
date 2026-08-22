@@ -11,6 +11,7 @@ import com.cartflow.cart.entity.Cart;
 import com.cartflow.cart.repository.CartRepository;
 import com.cartflow.exception.DuplicateResourceException;
 import com.cartflow.exception.InvalidTokenException;
+import com.cartflow.notification.service.EmailService;
 import com.cartflow.security.JwtUtil;
 import com.cartflow.security.UserPrincipal;
 import com.cartflow.user.entity.User;
@@ -46,7 +47,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final CartRepository cartRepository;
     private final WishlistRepository wishlistRepository;
-
+    private final EmailService emailService;
 
     @Value("${app.jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpirationMs;
@@ -214,16 +215,19 @@ public class AuthServiceImpl implements AuthService {
 
             passwordResetTokenRepository.save(resetToken);
 
-            // TODO (Phase 13): replace with real email service.
-            log.info("[SIMULATED EMAIL] Password reset link for {}: " +
-                            "http://localhost:8080/api/v1/auth/reset-password?token={}",
-                    user.getEmail(), resetTokenValue);
+            String subject = "Reset your CartFlow password";
+            String body = "Hi " + user.getFirstName() + ",\n\n"
+                    + "We received a request to reset your password. Use the token below to reset it:\n\n"
+                    + resetTokenValue + "\n\n"
+                    + "This token expires in 15 minutes. If you didn't request this, you can safely ignore this email.\n\n"
+                    + "— CartFlow";
+
+            emailService.sendEmail(user.getEmail(), subject, body);
         });
 
         // Always the same response regardless of whether the email existed —
         // prevents user enumeration (see Checkpoint 2.12 discussion).
     }
-
     @Override
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {

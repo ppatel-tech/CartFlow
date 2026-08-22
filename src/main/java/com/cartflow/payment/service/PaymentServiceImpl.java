@@ -2,6 +2,7 @@ package com.cartflow.payment.service;
 
 import com.cartflow.exception.PaymentException;
 import com.cartflow.exception.ResourceNotFoundException;
+import com.cartflow.notification.service.NotificationService;
 import com.cartflow.order.entity.Order;
 import com.cartflow.order.entity.OrderStatus;
 import com.cartflow.order.entity.PaymentStatus;
@@ -29,7 +30,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-
+    private final NotificationService notificationService;
     @Override
     @Transactional
     public PaymentResponse initiatePayment(String email, InitiatePaymentRequest request) {
@@ -99,6 +100,13 @@ public class PaymentServiceImpl implements PaymentService {
 
             order.setPaymentStatus(PaymentStatus.SUCCESS);
             order.setOrderStatus(OrderStatus.CONFIRMED);
+
+            notificationService.notifyUser(
+                    user,
+                    "Payment successful for " + order.getOrderNumber(),
+                    "Your payment for order " + order.getOrderNumber() + " was successful. Your order is now confirmed.",
+                    true
+            );
 
             log.info("Payment succeeded for order {}", order.getOrderNumber());
         } else {

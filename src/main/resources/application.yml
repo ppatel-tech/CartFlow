@@ -34,8 +34,21 @@ spring:
       max-file-size: 5MB
       max-request-size: 5MB
 
-server:
-  port: 8080
+  server:
+    port: 8080
+
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: ${MAILTRAP_USERNAME}
+    password: ${MAILTRAP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 
 app:
   jwt:
@@ -49,4 +62,5 @@ app:
   order:
     tax-rate: 0.05
     shipping-charge: 50.00
-
+  mail:
+    from: noreply@cartflow.com

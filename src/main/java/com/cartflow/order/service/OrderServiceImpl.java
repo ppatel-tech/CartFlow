@@ -11,6 +11,7 @@ import com.cartflow.exception.OutOfStockException;
 import com.cartflow.exception.ResourceNotFoundException;
 import com.cartflow.inventory.entity.Inventory;
 import com.cartflow.inventory.repository.InventoryRepository;
+import com.cartflow.notification.service.NotificationService;
 import com.cartflow.order.dto.request.CheckoutRequest;
 import com.cartflow.order.dto.response.OrderConfigResponse;
 import com.cartflow.order.dto.response.OrderItemResponse;
@@ -56,6 +57,8 @@ public class OrderServiceImpl implements OrderService {
     private final CouponService couponService;
     private final InvoiceService invoiceService;
     private final PaymentRepository paymentRepository;
+    private final NotificationService notificationService;
+
     
     @Value("${app.order.tax-rate}")
     private BigDecimal taxRate;
@@ -168,6 +171,14 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Order {} created for user: {} (total: {})",
                 savedOrder.getOrderNumber(), email, finalAmount);
+
+        notificationService.notifyUser(
+                user,
+                "Order placed: " + savedOrder.getOrderNumber(),
+                "Hi " + user.getFirstName() + ", your order " + savedOrder.getOrderNumber()
+                        + " has been placed successfully. Total: ₹" + finalAmount,
+                true
+        );
 
         return buildOrderResponse(savedOrder, orderItems);
     }
