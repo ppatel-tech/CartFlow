@@ -15,4 +15,10 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             "AND oi.order.customer.id = :userId " +
             "AND oi.order.orderStatus = 'DELIVERED'")
     boolean existsDeliveredPurchase(@Param("productId") Long productId, @Param("userId") Long userId);
+
+    @Query("SELECT oi.product.id, oi.product.name, SUM(oi.quantity), SUM(oi.sellingPrice * oi.quantity) " +
+            "FROM OrderItem oi WHERE oi.order.paymentStatus = 'SUCCESS' " +
+            "GROUP BY oi.product.id, oi.product.name " +
+            "ORDER BY SUM(oi.sellingPrice * oi.quantity) DESC")
+    List<Object[]> getProductSalesReport();
 }

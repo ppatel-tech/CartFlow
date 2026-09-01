@@ -33,14 +33,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -298,6 +297,66 @@ public class OrderServiceImpl implements OrderService {
                 .taxRate(taxRate)
                 .shippingCharge(shippingCharge)
                 .build();
+    }
+
+
+
+    private static final Map<OrderStatus, Set<OrderStatus>> ALLOWED_TRANSITIONS = Map.of(
+            OrderStatus.CONFIRMED, Set.of(OrderStatus.PACKING),
+            OrderStatus.PACKING, Set.of(OrderStatus.SHIPPED),
+            OrderStatus.SHIPPED, Set.of(OrderStatus.OUT_FOR_DELIVERY),
+            OrderStatus.OUT_FOR_DELIVERY, Set.of(OrderStatus.DELIVERED)
+    );
+
+    @Override
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public OrderResponse updateOrderStatus(Long orderId, OrderStatus newStatus) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        OrderStatus current = order.getOrderStatus();
+        Set<OrderStatus> allowedNext = ALLOWED_TRANSITIONS.getOrDefault(current, Set.of());
+
+        if (!allowedNext.contains(newStatus)) {
+            throw new BusinessException(
+                    "Cannot move order from " + current + " to " + newStatus);
+        }
+
+        order.setOrderStatus(newStatus);
+        Order updatedOrder = orderRepository.save(order);
+
+        List<OrderItem> items = orderItemRepository.findByOrder(updatedOrder);
+
+        notificationService.notifyUser(
+                order.getCustomer(),
+                "Order " + order.getOrderNumber() + " update",
+                "Your order status is now: " + newStatus,
+                true
+        );
+
+        log.info("Order {} status changed to {}", order.getOrderNumber(), newStatus);
+
+        return buildOrderResponse(updatedOrder, items);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<OrderResponse> getAllOrdersForAdmin(Pageable pageable) {
+        return orderRepository.findAll(pageable)
+                .map(order -> buildOrderResponse(order, orderItemRepository.findByOrder(order)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN')")
+    public OrderResponse getOrderByIdForAdmin(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        return buildOrderResponse(order, orderItemRepository.findByOrder(order));
     }
 
     private String describeStatus(OrderStatus status) {

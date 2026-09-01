@@ -1,14 +1,19 @@
 package com.cartflow.user.service;
 
 import com.cartflow.authentication.repository.RefreshTokenRepository;
+import com.cartflow.exception.BusinessException;
 import com.cartflow.exception.ResourceNotFoundException;
 import com.cartflow.user.dto.request.UpdateProfileRequest;
 import com.cartflow.user.dto.response.UserResponse;
 import com.cartflow.user.entity.User;
+import com.cartflow.user.entity.UserRole;
 import com.cartflow.user.entity.UserStatus;
 import com.cartflow.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,6 +68,37 @@ public class UserServiceImpl implements UserService {
         log.info("Account soft-deleted for user: {}", email);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<UserResponse> getAllUsersForAdmin(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(this::mapToResponse);
+    }
+
+    @Override
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponse updateUserStatus(Long userId, UserStatus status) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (user.getRole() == UserRole.ROLE_ADMIN) {
+            throw new BusinessException("Cannot change status of an admin account");
+        }
+
+        user.setStatus(status);
+        User updatedUser = userRepository.save(user);
+
+        if (status == UserStatus.BLOCKED) {
+            refreshTokenRepository.deleteByUser(user);
+        }
+
+        log.info("User {} status changed to {}", user.getEmail(), status);
+
+        return mapToResponse(updatedUser);
+    }
 
     private UserResponse mapToResponse(User user) {
         return UserResponse.builder()
