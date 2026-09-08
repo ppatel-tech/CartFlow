@@ -5,10 +5,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface BrandRepository extends JpaRepository<Brand, Long> {
     boolean existsByName(String name);
     Optional<Brand> findByIdAndIsActiveTrue(Long id);
     Page<Brand> findByIsActiveTrue(Pageable pageable);
+    List<Brand> findByIdIn(List<Long> ids);
 }

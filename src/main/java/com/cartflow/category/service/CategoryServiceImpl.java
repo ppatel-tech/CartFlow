@@ -8,6 +8,8 @@ import com.cartflow.exception.DuplicateResourceException;
 import com.cartflow.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +23,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
 
+    @CacheEvict(value = "categories", allEntries = true)
     @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
@@ -44,6 +47,7 @@ public class CategoryServiceImpl implements CategoryService {
         return mapToResponse(savedCategory);
     }
 
+    @CacheEvict(value = "categories", allEntries = true)
     @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
@@ -68,6 +72,7 @@ public class CategoryServiceImpl implements CategoryService {
         return mapToResponse(updatedCategory);
     }
 
+    @CacheEvict(value = "categories", allEntries = true)
     @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
@@ -91,6 +96,7 @@ public class CategoryServiceImpl implements CategoryService {
         return mapToResponse(category);
     }
 
+    @Cacheable(value = "categories", key = "#pageable")
     @Override
     @Transactional(readOnly = true)
     public Page<CategoryResponse> getAllCategories(Pageable pageable) {

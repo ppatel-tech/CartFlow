@@ -28,6 +28,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -187,8 +190,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponse> getAllProducts(Pageable pageable) {
-        return productRepository.findByIsActiveTrue(pageable)
-                .map(this::mapToResponse);
+        Page<Product> productsPage = productRepository.findByIsActiveTrue(pageable);
+        return mapProductsPageToResponse(productsPage);
     }
 
     @Override
@@ -201,8 +204,8 @@ public class ProductServiceImpl implements ProductService {
         Specification<Product> spec = ProductSpecification.withFilters(
                 categoryId, brandId, minPrice, maxPrice, minRating);
 
-        return productRepository.findAll(spec, pageable)
-                .map(this::mapToResponse);
+        Page<Product> productsPage = productRepository.findAll(spec, pageable);
+        return mapProductsPageToResponse(productsPage);
     }
 
     @Override
@@ -211,8 +214,81 @@ public class ProductServiceImpl implements ProductService {
 
         Specification<Product> spec = ProductSpecification.withKeyword(keyword);
 
-        return productRepository.findAll(spec, pageable)
-                .map(this::mapToResponse);
+        Page<Product> productsPage = productRepository.findAll(spec, pageable);
+        return mapProductsPageToResponse(productsPage);
+    }
+
+
+    private Page<ProductResponse> mapProductsPageToResponse(Page<Product> productsPage) {
+
+        List<Product> products = productsPage.getContent();
+        if (products.isEmpty()) {
+            return productsPage.map(this::mapToResponse);
+        }
+
+        List<Long> productIds = products.stream().map(Product::getId).toList();
+
+        Map<Long, List<String>> imagesByProductId = productImageRepository
+                .findByProductIdIn(productIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        img -> img.getProduct().getId(),
+                        Collectors.mapping(ProductImage::getImageUrl, Collectors.toList())
+                ));
+
+        Map<Long, Inventory> inventoryByProductId = inventoryRepository
+                .findByProductIdIn(productIds)
+                .stream()
+                .collect(Collectors.toMap(inv -> inv.getProduct().getId(), inv -> inv));
+
+        List<Long> categoryIds = products.stream()
+                .map(p -> p.getCategory().getId())
+                .distinct()
+                .toList();
+        Map<Long, Category> categoryById = categoryRepository.findByIdIn(categoryIds)
+                .stream()
+                .collect(Collectors.toMap(Category::getId, c -> c));
+
+        List<Long> brandIds = products.stream()
+                .map(p -> p.getBrand().getId())
+                .distinct()
+                .toList();
+        Map<Long, Brand> brandById = brandRepository.findByIdIn(brandIds)
+                .stream()
+                .collect(Collectors.toMap(Brand::getId, b -> b));
+
+        return productsPage.map(product -> {
+            List<String> images = imagesByProductId.getOrDefault(product.getId(), List.of());
+            boolean inStock = Optional.ofNullable(inventoryByProductId.get(product.getId()))
+                    .map(inv -> inv.getAvailableQuantity() > 0)
+                    .orElse(false);
+            Category category = categoryById.get(product.getCategory().getId());
+            Brand brand = brandById.get(product.getBrand().getId());
+
+            return buildResponse(product, images, inStock, category, brand);
+        });
+    }
+
+    private ProductResponse buildResponse(Product product, List<String> imageUrls, boolean inStock,
+                                          Category category, Brand brand) {
+        return ProductResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .sku(product.getSku())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .discountPrice(product.getDiscountPrice())
+                .averageRating(product.getAverageRating())
+                .totalReviews(product.getTotalReviews())
+                .isActive(product.isActive())
+                .categoryId(category.getId())
+                .categoryName(category.getName())
+                .brandId(brand.getId())
+                .brandName(brand.getName())
+                .imageUrls(imageUrls)
+                .inStock(inStock)
+                .createdAt(product.getCreatedAt())
+                .build();
     }
 
     private ProductResponse mapToResponse(Product product) {
@@ -226,23 +302,7 @@ public class ProductServiceImpl implements ProductService {
                 .map(inventory -> inventory.getAvailableQuantity() > 0)
                 .orElse(false);
 
-        return ProductResponse.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .sku(product.getSku())
-                .description(product.getDescription())
-                .price(product.getPrice())
-                .discountPrice(product.getDiscountPrice())
-                .averageRating(product.getAverageRating())
-                .totalReviews(product.getTotalReviews())
-                .isActive(product.isActive())
-                .categoryId(product.getCategory().getId())
-                .categoryName(product.getCategory().getName())
-                .brandId(product.getBrand().getId())
-                .brandName(product.getBrand().getName())
-                .imageUrls(imageUrls)
-                .inStock(inStock)
-                .createdAt(product.getCreatedAt())
-                .build();
+        return buildResponse(product, imageUrls, inStock, product.getCategory(), product.getBrand());
     }
 }
+

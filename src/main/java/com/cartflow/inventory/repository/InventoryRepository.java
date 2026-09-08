@@ -5,6 +5,7 @@ import com.cartflow.product.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
@@ -13,4 +14,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     @Query("SELECT COUNT(i) FROM Inventory i WHERE i.availableQuantity <= i.lowStockThreshold")
     long countLowStockProducts();
+
+    List<Inventory> findByProductIdIn(List<Long> productIds);
 }

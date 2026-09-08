@@ -8,6 +8,8 @@ import com.cartflow.exception.DuplicateResourceException;
 import com.cartflow.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +23,7 @@ public class BrandServiceImpl implements BrandService {
 
     private final BrandRepository brandRepository;
 
+    @CacheEvict(value = "brands", allEntries = true)
     @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
@@ -44,6 +47,7 @@ public class BrandServiceImpl implements BrandService {
         return mapToResponse(savedBrand);
     }
 
+    @CacheEvict(value = "brands", allEntries = true)
     @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
@@ -68,6 +72,7 @@ public class BrandServiceImpl implements BrandService {
         return mapToResponse(updatedBrand);
     }
 
+    @CacheEvict(value = "brands", allEntries = true)
     @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
@@ -91,6 +96,8 @@ public class BrandServiceImpl implements BrandService {
         return mapToResponse(brand);
     }
 
+
+    @Cacheable(value = "brands", key = "#pageable")
     @Override
     @Transactional(readOnly = true)
     public Page<BrandResponse> getAllBrands(Pageable pageable) {
