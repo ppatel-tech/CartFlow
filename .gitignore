@@ -37,5 +37,4 @@ logs/
 ### CartFlow additions ###
 uploads/
 
-### .env file
 .env
