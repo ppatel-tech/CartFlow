@@ -60,8 +60,6 @@ app:
     refresh-token-expiration-ms: 604800000
   password-reset:
     token-expiration-ms: 900000
-  upload:
-    dir: uploads/products
   order:
     tax-rate: 0.05
     shipping-charge: 50.00
@@ -73,3 +71,12 @@ app:
 
 cache:
   type: redis
+
+
+
+cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME}
+    api-key: ${CLOUDINARY_API_KEY}
+    api-secret: ${CLOUDINARY_API_SECRET}
+
+

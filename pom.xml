@@ -138,6 +138,12 @@
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
+		<!-- 14 . claudinary  -->
+		<dependency>
+			<groupId>com.cloudinary</groupId>
+			<artifactId>cloudinary-http5</artifactId>
+			<version>2.4.0</version>
+		</dependency>
 
 	</dependencies>
 

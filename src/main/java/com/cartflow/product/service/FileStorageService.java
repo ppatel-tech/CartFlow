@@ -1,51 +1,37 @@
 package com.cartflow.product.service;
 
 import com.cartflow.exception.BusinessException;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
+import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FileStorageService {
 
-    @Value("${app.upload.dir}")
-    private String uploadDir;
+    private final Cloudinary cloudinary;
 
     public String storeFile(MultipartFile file) {
-
-        String originalFilename = StringUtils.cleanPath(
-                file.getOriginalFilename() != null ? file.getOriginalFilename() : "file");
-
-        String extension = "";
-        int dotIndex = originalFilename.lastIndexOf('.');
-        if (dotIndex > 0) {
-            extension = originalFilename.substring(dotIndex);
-        }
-
-        String storedFilename = UUID.randomUUID() + extension;
-
         try {
-            Path uploadPath = Paths.get(uploadDir);
-            Files.createDirectories(uploadPath);
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap("folder", "cartflow/products"));
 
-            Path targetPath = uploadPath.resolve(storedFilename);
-            Files.copy(file.getInputStream(), targetPath);
+            String secureUrl = (String) uploadResult.get("secure_url");
 
-            log.info("File stored: {}", storedFilename);
+            log.info("File uploaded to Cloudinary: {}", secureUrl);
 
-            return "/uploads/products/" + storedFilename;
+            return secureUrl;
 
         } catch (IOException ex) {
-            throw new BusinessException("Failed to store file: " + ex.getMessage());
+            throw new BusinessException("Failed to upload file: " + ex.getMessage());
         }
     }
 }
